@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>视频号推流助手</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #0f1115;
+      color: #e5e7eb;
+      min-height: 100vh;
+      padding: 16px;
+      padding-bottom: 40px;
+    }
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .badge {
+      background: #1f2937;
+      color: #9ca3af;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+    }
+    .card {
+      background: #16181d;
+      border: 1px solid #27272a;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 12px;
+      color: #d1d5db;
+    }
+    .preview-box {
+      position: relative;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      aspect-ratio: 9/16;
+      max-height: 70vh;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    button {
+      flex: 1;
+      background: #27272a;
+      color: #e5e7eb;
+      border: none;
+      padding: 13px 0;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 500;
+    }
+    button.primary {
+      background: #3b82f6;
+      color: white;
+    }
+    button.danger {
+      background: #dc2626;
+      color: white;
+    }
+    button:disabled {
+      opacity: 0.45;
+    }
+    .status {
+      margin-top: 14px;
+      padding: 11px 14px;
+      background: #1c1e24;
+      border-radius: 10px;
+      font-size: 14px;
+      color: #9ca3af;
+      text-align: center;
+    }
+    .status.live {
+      color: #4ade80;
+      border: 1px solid #166534;
+    }
+    .target-item {
+      background: #1c1e24;
+      border: 1px solid #2d2f36;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .target-item label {
+      display: block;
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    .target-item label:first-child {
+      margin-top: 0;
+    }
+    .target-item input {
+      width: 100%;
+      background: #0f1115;
+      border: 1px solid #3f3f46;
+      color: #e5e7eb;
+      padding: 11px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .target-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .target-header input {
+      flex: 1;
+      margin: 0;
+    }
+    .small-btn {
+      padding: 8px 12px;
+      font-size: 13px;
+      flex: none;
+      width: auto;
+    }
+    .add-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 15px;
+      background: #1f2937;
+      border-radius: 10px;
+    }
+    details {
+      margin-top: 8px;
+      background: #1c1e24;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    summary {
+      cursor: pointer;
+      font-weight: 500;
+      color: #d1d5db;
+      font-size: 15px;
+    }
+    .tutorial {
+      margin-top: 12px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #9ca3af;
+    }
+    .tutorial a {
+      color: #60a5fa;
+    }
+    .tips {
+      font-size: 13px;
+      color: #9ca3af;
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>视频号推流助手</h1>
+      <span class="badge">手机版</span>
+    </header>
+
+    <div class="card">
+      <div class="section-title">摄像头预览</div>
+      <div class="preview-box">
+        <video id="preview" autoplay muted playsinline></video>
+      </div>
+      <div class="controls">
+        <button id="btnStartCam" class="primary">开启摄像头</button>
+        <button id="btnStopCam" class="danger" disabled>关闭</button>
+        <button id="btnSwitchCam" disabled>切换镜头</button>
+      </div>
+      <div class="status" id="status">点击「开启摄像头」开始</div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">推流目标（可多路）</div>
+      <div id="targets"></div>
+      <button class="add-btn" id="btnAdd">+ 添加视频号</button>
+      <div class="tips" style="margin-top:16px;">
+        提示：手机浏览器目前无法直接推 RTMP。请在这里管理地址，再用电脑 OBS 推流。
+      </div>
+    </div>
+
+    <details>
+      <summary>如何获取视频号推流地址？</summary>
+      <div class="tutorial">
+        1. 电脑打开 <a href="https://channels.weixin.qq.com/" target="_blank">视频号助手</a><br>
+        2. 点击左侧「直播」→「直播间管理」<br>
+        3. 创建直播，选择「推流直播」<br>
+        4. 复制「推流地址」和「推流密钥」填到上面<br>
+        注意：地址大约 2 小时有效，每次开播需重新获取。
+      </div>
+    </details>
+  </div>
+
+  <script>
+    let stream = null;
+    let facingMode = 'user';
+
+    const preview = document.getElementById('preview');
+    const statusEl = document.getElementById('status');
+    const btnStartCam = document.getElementById('btnStartCam');
+    const btnStopCam = document.getElementById('btnStopCam');
+    const btnSwitchCam = document.getElementById('btnSwitchCam');
+    const targetsEl = document.getElementById('targets');
+    const btnAdd = document.getElementById('btnAdd');
+
+    let targets = JSON.parse(localStorage.getItem('pushTargets') || '[]');
+    if (targets.length === 0) {
+      targets = [{ name: '视频号1', server: '', key: '' }];
+    }
+
+    function saveTargets() {
+      localStorage.setItem('pushTargets', JSON.stringify(targets));
+    }
+
+    function renderTargets() {
+      targetsEl.innerHTML = '';
+      targets.forEach((t, i) => {
+        const div = document.createElement('div');
+        div.className = 'target-item';
+        div.innerHTML = `
+          <div class="target-header">
+            <input value="${t.name}" placeholder="名称" onchange="updateTarget(${i}, 'name', this.value)">
+            <button class="small-btn danger" onclick="removeTarget(${i})">删除</button>
+          </div>
+          <label>推流地址</label>
+          <input value="${t.server}" placeholder="rtmp://..." onchange="updateTarget(${i}, 'server', this.value)">
+          <label>推流密钥</label>
+          <input value="${t.key}" placeholder="密钥" onchange="updateTarget(${i}, 'key', this.value)">
+          <button class="small-btn" style="margin-top:12px; width:100%;" onclick="copyFull(${i})">复制完整地址</button>
+        `;
+        targetsEl.appendChild(div);
+      });
+    }
+
+    window.updateTarget = (i, field, value) => {
+      targets[i][field] = value;
+      saveTargets();
+    };
+
+    window.removeTarget = (i) => {
+      if (targets.length <= 1) return alert('至少保留一个');
+      targets.splice(i, 1);
+      saveTargets();
+      renderTargets();
+    };
+
+    window.copyFull = (i) => {
+      const t = targets[i];
+      let full = t.server.trim();
+      if (!full.endsWith('/') && t.key) full += '/';
+      full += t.key.trim();
+      navigator.clipboard.writeText(full).then(() => {
+        statusEl.textContent = '已复制完整推流地址';
+        setTimeout(() => {
+          statusEl.textContent = stream ? '摄像头已开启' : '点击「开启摄像头」开始';
+        }, 2000);
+      }).catch(() => alert('复制失败，请手动长按复制'));
+    };
+
+    btnAdd.onclick = () => {
+      targets.push({ name: `视频号${targets.length + 1}`, server: '', key: '' });
+      saveTargets();
+      renderTargets();
+    };
+
+    async function startCamera() {
+      try {
+        const constraints = {
+          video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: true
+        };
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        preview.srcObject = stream;
+        statusEl.textContent = '摄像头已开启';
+        statusEl.classList.add('live');
+        btnStartCam.disabled = true;
+        btnStopCam.disabled = false;
+        btnSwitchCam.disabled = false;
+      } catch (err) {
+        statusEl.textContent = '开启失败：请允许摄像头权限';
+      }
+    }
+
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+        preview.srcObject = null;
+      }
+      statusEl.textContent = '摄像头已关闭';
+      statusEl.classList.remove('live');
+      btnStartCam.disabled = false;
+      btnStopCam.disabled = true;
+      btnSwitchCam.disabled = true;
+    }
+
+    btnStartCam.onclick = startCamera;
+    btnStopCam.onclick = stopCamera;
+
+    btnSwitchCam.onclick = async () => {
+      facingMode = facingMode === 'user' ? 'environment' : 'user';
+      stopCamera();
+      await startCamera();
+    };
+
+    renderTargets();
+  </script>
+</body>
+</html>
